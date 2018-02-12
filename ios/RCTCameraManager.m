@@ -42,6 +42,11 @@ RCT_EXPORT_MODULE();
   return self.camera;
 }
 
++ (BOOL)requiresMainQueueSetup
+{
+  return NO;
+}
+
 - (NSDictionary *)constantsToExport
 {
 
@@ -301,7 +306,7 @@ RCT_CUSTOM_VIEW_PROPERTY(captureAudio, BOOL, RCTCamera) {
   }
 }
 
-- (NSArray *)customDirectEventTypes
+- (NSArray *)customBubblingEventTypes
 {
     return @[
       @"focusChanged",
@@ -659,7 +664,10 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
   NSString *responseString;
 
   if (target == RCTCameraCaptureTargetMemory) {
-    resolve(@{@"data":[imageData base64EncodedStringWithOptions:0]});
+    int metadataOrientation = [[metadata objectForKey:(NSString *)kCGImagePropertyOrientation] intValue];
+    resolve(@{
+      @"data":[imageData base64EncodedStringWithOptions:0],
+      @"orientationCode": [NSNumber numberWithInt:metadataOrientation]});
     return;
   }
 

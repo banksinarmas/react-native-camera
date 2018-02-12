@@ -76,6 +76,24 @@ public class MutableImage {
         }
     }
 
+    public int checkOrientation() throws ImageMutationFailedException {
+        try {
+            Metadata metadata = originalImageMetaData();
+            ExifIFD0Directory exifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+            if (exifIFD0Directory == null) {
+                return 0;
+            } else if (exifIFD0Directory.containsTag(ExifIFD0Directory.TAG_ORIENTATION)) {
+                int exifOrientation = exifIFD0Directory.getInt(ExifIFD0Directory.TAG_ORIENTATION);
+                if(exifOrientation != 1) {
+                    return exifOrientation;
+                }
+            }
+            return 0;
+        } catch (ImageProcessingException | IOException | MetadataException e) {
+            throw new ImageMutationFailedException("failed to fix orientation", e);
+        }
+    }
+
     //see http://www.impulseadventure.com/photo/exif-orientation.html
     private void rotate(int exifOrientation) throws ImageMutationFailedException {
         final Matrix bitmapMatrix = new Matrix();

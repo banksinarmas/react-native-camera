@@ -73,6 +73,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
     private static ReactApplicationContext _reactContext;
     private RCTSensorOrientationChecker _sensorOrientationChecker;
+    private MediaActionSound sound = new MediaActionSound();
 
     private MediaRecorder mMediaRecorder;
     private long MRStartTime;
@@ -87,6 +88,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         _reactContext = reactContext;
         _sensorOrientationChecker = new RCTSensorOrientationChecker(_reactContext);
         _reactContext.addLifecycleEventListener(this);
+        sound.load(MediaActionSound.SHUTTER_CLICK);
     }
 
     public static ReactApplicationContext getReactContextSingleton() {
@@ -516,7 +518,6 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"));
 
         if (options.hasKey("playSoundOnCapture") && options.getBoolean("playSoundOnCapture")) {
-            MediaActionSound sound = new MediaActionSound();
             sound.play(MediaActionSound.SHUTTER_CLICK);
         }
 
@@ -584,10 +585,16 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         switch (options.getInt("target")) {
             case RCT_CAMERA_CAPTURE_TARGET_MEMORY:
-                String encoded = mutableImage.toBase64(jpegQualityPercent);
-                WritableMap response = new WritableNativeMap();
-                response.putString("data", encoded);
-                promise.resolve(response);
+                try {
+                  String encoded = mutableImage.toBase64(jpegQualityPercent);
+                  int orientationCode = mutableImage.checkOrientation();
+                  WritableMap response = new WritableNativeMap();
+                  response.putString("data", encoded);
+                  response.putInt("orientationCode", orientationCode);
+                  promise.resolve(response);
+                } catch (Exception exc) {
+                  promise.reject("Error converting to base64");
+                }
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_CAMERA_ROLL: {
                 File cameraRollFile = getOutputCameraRollFile(MEDIA_TYPE_IMAGE);
